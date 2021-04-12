@@ -25,7 +25,7 @@ for i in range(len(vacs)):
     if (('qa' in vacs_str_title.lower()) or ('тестировщ' in vacs_str_title.lower()) or ('q&a' in vacs_str_title.lower())) \
             and ('auto' not in vacs_str_title.lower() and 'атф' not in vacs_str_title.lower() and
                  'авто' not in vacs_str_title.lower() and 'нагруз' not in vacs_str_title.lower()
-                 and 'нт' not in vacs_str_title.lower()):
+                 and 'НТ' not in vacs_str_title):
         count_work_vac += 1
     # Сколько вакансий для аналатика данных?
     if ('data analyst' in vacs_str_title.lower()) or ('DA' in vacs_str_title) or ('аналитик данных' in
@@ -50,10 +50,10 @@ for i in range(len(vacs)):
                 else:
                     count_vac_fresh_older_halfyear += 1
 
-print('Сколько вакансий, которые вам нравятся? - ' + str(vac_like) + 'из них')
-print('\t вакансий младще месяца - ' + str(count_vac_fresh_month))
+print('Сколько вакансий, которые вам нравятся? - ' + str(vac_like) + '. Из них')
+print('\t вакансий младше месяца - ' + str(count_vac_fresh_month))
 print('\t вакансий младше квартала - ' + str(count_vac_fresh_kvartal))
-print('\t вакансий младще полугода - ' + str(count_vac_fresh_halfyear))
+print('\t вакансий младше полугода - ' + str(count_vac_fresh_halfyear))
 print('\t вакансий старше полугода - ' + str(count_vac_fresh_older_halfyear))
 print('Сколько вакансий с позициями на которых вы работаете? - ' + str(count_work_vac))
 print('Сколько вакансий для аналатика данных? - ' + str(count_da_vac))
