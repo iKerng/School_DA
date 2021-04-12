@@ -2,6 +2,7 @@ import pandas as pd
 import rq_hh_api
 import os.path
 import csv
+import numpy as np
 
 csv.field_size_limit(100000000)
 
@@ -28,10 +29,12 @@ vacancies.published_at = pd.to_datetime(vacancies.published_at)
 
 # + Переведите даты в дни недели, и определите день недели, в который больше всего публикуют вакансий
 vacancies[['week_day']] = vacancies.published_at.dt.dayofweek+1
+df_for_bar = (vacancies.groupby(by='week_day').count()['id'].reset_index()).rename(columns={'id': 'y', 'week_day': 'x'})
+rq_hh_api.hh_plot_date_count(df=df_for_bar, plt_type='bar')
 
 # + Постройте график опубликованных вакансий по датам
-df_for_plt = pd.DataFrame(vacancies.groupby(by=vacancies['published_at'].dt.date)['published_at'].count())
-df_for_plt = df_for_plt.rename(index={'published_at': 'publish_date'}, columns={'published_at': 'count'})
+df_for_plt = pd.DataFrame(vacancies.groupby(by=vacancies['published_at'].dt.date)['premium'].count())
+df_for_plt = df_for_plt.reset_index().rename(columns={'published_at': 'x', 'premium': 'y'})
 rq_hh_api.hh_plot_date_count(df_for_plt)
 
 # - Найдите те вакансии с использованием python, которые вам интересны

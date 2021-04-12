@@ -51,27 +51,33 @@ def append_df_hh_download(site='https://api.hh.ru/vacancies?', comp='3529', area
     vac_desc = pd.DataFrame(columns=['id', 'description'])
     for i in tqdm(range(len(df_all))):
         vac_desc = api_hh_vacancy_rq(df_all['url_desc'].iloc[i], vac_desc)
-    df_all = df_all.set_index('id').join(vac_desc.set_index('id'))
-
+    df_all = (df_all.set_index('id').join(vac_desc.set_index('id'))).reset_index()
+    ls_id = ((df_all.groupby(by='id').idxmin()['premium']).reset_index().set_index('premium')).index.to_list()
+    df_all = df_all[(df_all.reset_index())['index'].isin(ls_id)].set_index('id')
     return df_all
 
 
 def api_hh_vacancy_rq(site='', df_vac_rq=pd.DataFrame(columns=['id', 'description','skills'])):
     if len(site) > 0:
         api_hh_vac_rq = req.get(site).json()
-        df_vac_rq = df_vac_rq.append(pd.DataFrame([[api_hh_vac_rq.get('id'), api_hh_vac_rq.get('description'), api_hh_vac_rq.get('key_skills')]], columns=['id', 'description', 'skills']))
+        df_vac_rq = df_vac_rq.append(pd.DataFrame([[api_hh_vac_rq.get('id'), api_hh_vac_rq.get('description'),
+                                                    api_hh_vac_rq.get('key_skills')]],
+                                                  columns=['id', 'description', 'skills']))
     else:
         print('Не передан параметр сайта')
     return df_vac_rq
 
 
-def hh_plot_date_count(df=pd.DataFrame(), width=15, height=10):
+def hh_plot_date_count(df=pd.DataFrame(), width=15, height=10, plt_type=''):
     if ~df.empty:
-        plt.figure(figsize=(width,height))
-        plt.plot(df)
-        plt.yticks(range(0, 901, 50))
-        plt.xticks(df.index, rotation=90)
-        plt.grid()
+        plt.figure(figsize=(width, height))
+        if plt_type == 'bar':
+            plt.bar(df.x, df.y)
+        else:
+            plt.plot(df.set_index('x'))
+            plt.yticks(range(0, 901, 50))
+            plt.xticks(df.x, rotation=90)
+            plt.grid()
         plt.show()
     else:
         print('Не передан параметр ser передающий в функцию серию')
