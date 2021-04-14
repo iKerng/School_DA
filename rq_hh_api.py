@@ -94,7 +94,7 @@ def api_hh_vacancy_rq(site='', df_vac_rq=pd.DataFrame(columns=['id', 'descriptio
     return df_vac_rq
 
 
-def hh_plot_date_count(df=pd.DataFrame(), width=15, height=10, plt_type=''):
+def hh_plot_date_count(df=pd.DataFrame(), width=15, height=10, plt_type='', rot=0):
     if ~df.empty:
         plt.figure(figsize=(width, height))
         if plt_type == 'bar':
@@ -102,8 +102,8 @@ def hh_plot_date_count(df=pd.DataFrame(), width=15, height=10, plt_type=''):
         else:
             plt.plot(df.set_index('x'))
             plt.yticks(range(0, 901, 50))
-            plt.xticks(df.x, rotation=90)
             plt.grid()
+        plt.xticks(df.x, rotation=rot)
         plt.show()
     else:
         print('Не передан параметр ser передающий в функцию серию')

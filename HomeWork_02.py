@@ -46,14 +46,14 @@ rq_hh_api.hh_plot_date_count(df=df_for_bar, plt_type='bar')
 df_for_plt = pd.DataFrame(vacancies.groupby(by=vacancies['published_at'].dt.date)['premium'].count())
 df_for_plt = df_for_plt.reset_index().rename(columns={'published_at': 'x', 'premium': 'y'})
 print('Строим график количества публикаций вакансий по датам')
-rq_hh_api.hh_plot_date_count(df_for_plt)
+rq_hh_api.hh_plot_date_count(df=df_for_plt, rot=90)
 
 # - Найдите те вакансии с использованием python, которые вам интересны
 like_vac = vacancies[['area_name','name', 'description', 'skills', 'address_metro_station_name', 'published_at', 'archived', 'salary_from', 'salary_to']].copy()
 like_vac = like_vac[like_vac['area_name'].str.lower() == 'москва']
 like_vac = like_vac[like_vac['description'].str.contains('DA|data analytic|Data analytic|Data Analytic')]
 like_vac = like_vac[like_vac['description'].str.lower().str.contains('python')]
-print(like_vac)
+# print(like_vac)
 
 # - Определите по полю skills какие навыки больше всего востребованы для этих вакансий, и
 print('Список навыков требуемых для данных вакансий: ' +
@@ -63,5 +63,5 @@ rq_hh_api.best_skill(like_vac)
 # - Постройте график наиболее востребованных вакансий
 df_vostr = pd.DataFrame((vacancies.groupby('name').name.count().sort_values(ascending=False))).rename(
     columns={'name':'count'}).reset_index()
-df_vostr = df_vostr.rename(columns={'name':'x', 'count':'y'})
-rq_hh_api.hh_plot_date_count(df=df_vostr, plt_type='bar')
+df_vostr = df_vostr.rename(columns={'name':'x', 'count':'y'}).head(20)
+rq_hh_api.hh_plot_date_count(df=df_vostr, plt_type='bar', rot=90)
