@@ -6,9 +6,11 @@ import matplotlib.pyplot as plt
 import ast
 import numpy as np
 import re
+import datetime
 
 
 # api_hh_vacancies_rq(site, comp, area, pg, per_pg, sort, date_to, date_from, api_df)
+# https://api.hh.ru/vacancies?employer_id=3529&area=113&page=0&per_page=100
 def api_hh_vacancies_rq(site='https://api.hh.ru/vacancies?', comp='3529', area='113', pg='0', per_pg='100',
                         sort='publication_time', date_to='', date_from='1970-01-02', api_df=pd.DataFrame()):
     rq_url_params = dict({'employer_id': comp, 'area': area, 'page': pg, 'per_page': per_pg, 'order_by': sort})
@@ -54,19 +56,26 @@ def append_df_hh_download(site='https://api.hh.ru/vacancies?', comp='3529', area
     vac_desc = pd.DataFrame(columns=['id', 'description'])
     for i in tqdm(range(len(df_all))):
         vac_desc = api_hh_vacancy_rq(df_all['url_desc'].iloc[i], vac_desc)
+    # print(vac_desc.head(20))
     df_all = (df_all.set_index('id').join(vac_desc.set_index('id'))).reset_index()
     ls_id = ((df_all.groupby(by='id').idxmin()['premium']).reset_index().set_index('premium')).index.to_list()
     df_all = df_all[(df_all.reset_index())['index'].isin(ls_id)].set_index('id')
     df_all = df_dict_cols_parser(df_all)
-    df_all = df_all[['premium', 'name', 'has_test', 'response_letter_required', 'published_at', 'created_at',
-                     'archived', 'apply_alternate_url', 'url', 'alternate_url', 'working_days',
-                     'working_time_intervals', 'working_time_modes', 'accept_temporary', 'immediate_redirect_url',
-                     'url_desc', 'description', 'area_name', 'salary_from', 'salary_to', 'salary_currency',
-                     'salary_gross', 'type_name', 'address_city', 'address_street', 'address_building',
-                     'address_description', 'address_raw', 'address_metro', 'address_metro_stations',
-                     'employer_name', 'employer_url', 'employer_alternate_url', 'employer_vacancies_url',
-                     'employer_trusted', 'snippet_requirement', 'snippet_responsibility', 'schedule_name']]
+    df_all = df_all.drop(['department', 'area', 'salary', 'type', 'address', 'sort_point_distance',
+                          'insider_interview', 'relations', 'employer', 'snippet', 'contacts', 'schedule',
+                          'working_days', 'working_time_intervals', 'working_time_modes', 'accept_temporary',
+                          'department_id', 'area_id', 'area_url', 'type_id', 'address_description',
+                          'address_lat', 'address_lng', 'address_metro_stations', 'address_id', 'employer_id',
+                          'schedule_id', 'working_days_id', 'working_time_intervals_id',
+                          'working_time_modes_id', 'employer_logo_urls'], axis=1)
     df_all = df_dict_cols_parser(df_all)
+    df_all = df_all.drop(['address_metro', 'address_metro_station_id', 'address_metro_line_id',
+                          'address_metro_lat', 'address_metro_lng'], axis=1)
+    df_all['description'] = df_all['description'].apply(lambda x: re.sub(r"\<[^>]*\>", '', x))
+    df_all['published'] = df_all['published_at'].apply(
+        lambda x: datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S%z'))
+    df_all['created_at'] = df_all['created_at'].apply(
+        lambda x: datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S%z'))
     return df_all
 
 
@@ -134,10 +143,11 @@ def df_dict_cols_parser(df_pars=pd.DataFrame()):
                                                                                                  keys()))).to_list())
         # print('Ключей в словаре: ' + str(max_count_keys))
         ls_keys = (df_pars[~df_pars[df_column].isna()][df_pars
-                                                   [~df_pars[df_column].isna()][df_column].apply(
+                                                       [~df_pars[df_column].isna()][df_column].apply(
             lambda x: (len(ast.literal_eval(x).keys()))) == max_count_keys].head(1).index.to_list()[0])
         if max_count_keys > 1:
-            list_keys = (df_pars[df_column].loc[[ls_keys]].apply(lambda x: list(ast.literal_eval(x).keys()))).to_list()[0]
+            list_keys = (df_pars[df_column].loc[[ls_keys]].apply(lambda x: list(ast.literal_eval(x).keys()))).to_list()[
+                0]
             # print('Список ключей: ' + str(list_keys))
             for key in list_keys:
                 # print('Создаем дочернюю колонку [' + df_column + '_' + key + '] и помещаем в нее значение из ключа ['
@@ -145,3 +155,20 @@ def df_dict_cols_parser(df_pars=pd.DataFrame()):
                 df_pars[df_column + '_' + key] = df_pars[~df_pars[df_column].isna()][df_column].apply(
                     lambda x: ast.literal_eval(x).get(key)).append(df_pars[df_pars[df_column].isna()][df_column])
     return df_pars
+
+
+def best_skill(df_skill=pd.DataFrame(columns=['skill', 'count'])):
+    vacs_skills = df_skill[df_skill['skills'].notna()]['skills'].str.split(', ').to_list()
+    ls_skills = []
+    ls_skills_unique = []
+    for i in range(len(vacs_skills)):
+        for k in range(len(vacs_skills[i])):
+            ls_skills.append(vacs_skills[i][k])
+    ser_unique_skills = pd.Series(ls_skills)
+    for i in ser_unique_skills.unique():
+        ls_skills_unique.append(i)
+    df_skills = pd.DataFrame(columns=['skill', 'count'])
+    for i in range(len(ls_skills_unique)):
+        dic = {'skill': ls_skills_unique[i], 'count': ls_skills.count(ls_skills_unique[i])}
+        df_skills.loc[i] = [ls_skills_unique[i], ls_skills.count(ls_skills_unique[i])]
+    return print(df_skills.sort_values('count', ascending=False).iloc[0]['skill'])
