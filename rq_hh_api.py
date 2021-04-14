@@ -3,6 +3,9 @@ import pandas as pd
 import math
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
+import ast
+import numpy as np
+import re
 
 
 # api_hh_vacancies_rq(site, comp, area, pg, per_pg, sort, date_to, date_from, api_df)
@@ -54,14 +57,28 @@ def append_df_hh_download(site='https://api.hh.ru/vacancies?', comp='3529', area
     df_all = (df_all.set_index('id').join(vac_desc.set_index('id'))).reset_index()
     ls_id = ((df_all.groupby(by='id').idxmin()['premium']).reset_index().set_index('premium')).index.to_list()
     df_all = df_all[(df_all.reset_index())['index'].isin(ls_id)].set_index('id')
+    df_all = df_dict_cols_parser(df_all)
+    df_all = df_all[['premium', 'name', 'has_test', 'response_letter_required', 'published_at', 'created_at',
+                     'archived', 'apply_alternate_url', 'url', 'alternate_url', 'working_days',
+                     'working_time_intervals', 'working_time_modes', 'accept_temporary', 'immediate_redirect_url',
+                     'url_desc', 'description', 'area_name', 'salary_from', 'salary_to', 'salary_currency',
+                     'salary_gross', 'type_name', 'address_city', 'address_street', 'address_building',
+                     'address_description', 'address_raw', 'address_metro', 'address_metro_stations',
+                     'employer_name', 'employer_url', 'employer_alternate_url', 'employer_vacancies_url',
+                     'employer_trusted', 'snippet_requirement', 'snippet_responsibility', 'schedule_name']]
+    df_all = df_dict_cols_parser(df_all)
     return df_all
 
 
-def api_hh_vacancy_rq(site='', df_vac_rq=pd.DataFrame(columns=['id', 'description','skills'])):
+def api_hh_vacancy_rq(site='', df_vac_rq=pd.DataFrame(columns=['id', 'description', 'skills'])):
     if len(site) > 0:
         api_hh_vac_rq = req.get(site).json()
-        df_vac_rq = df_vac_rq.append(pd.DataFrame([[api_hh_vac_rq.get('id'), api_hh_vac_rq.get('description'),
-                                                    api_hh_vac_rq.get('key_skills')]],
+        ks = api_hh_vac_rq.get('key_skills')
+        if ks == []:
+            ks = ''
+        else:
+            ks = str(api_hh_vac_rq.get('key_skills'))[1:-1]
+        df_vac_rq = df_vac_rq.append(pd.DataFrame([[api_hh_vac_rq.get('id'), api_hh_vac_rq.get('description'), ks]],
                                                   columns=['id', 'description', 'skills']))
     else:
         print('Не передан параметр сайта')
@@ -83,14 +100,48 @@ def hh_plot_date_count(df=pd.DataFrame(), width=15, height=10, plt_type=''):
         print('Не передан параметр ser передающий в функцию серию')
 
 
-# a = pd.DataFrame(columns=['id', 'url'])
-# b = pd.DataFrame(columns=['id', 'description'])
-# # print(a)
-# a = a.append(pd.DataFrame([[42975821, 'https://api.hh.ru/vacancies/42975821']], columns=['id', 'url']))
-# b = b.append(pd.DataFrame([[42975821, 'dgpughafpuyp3w']], columns=['id', 'description']))
-# print(a)
-# print(b)
-# print('-----------------------------------------------------')
-# # print(a[['description']].iloc[0])
-# a = a.set_index('id').join(b.set_index('id'))
-# print(a)
+def df_dict_cols_parser(df_pars=pd.DataFrame()):
+    for df_column in df_pars.columns:
+        # print('------------------------------' + df_column + '------------------------------')
+        if df_column == 'skills':
+            # print('В колонке Skills лежит кортеж. Преобразуем в список значений.')
+            df_pars[df_column] = df_pars[df_pars[df_column].notna()][df_column].apply(
+                lambda x: re.sub(r"|'name'|{|}|'|: ", "", x)).append(df_pars[df_pars[df_column].isna()][df_column])
+            continue
+        # Если в обрабатываемой строке с типом str лежит list, в котором лежит dict, то преобразуем
+        # в str в котором лежит dict, чтобы удачно прошел парсинг словаря
+        df_pars[df_column] = df_pars[df_pars[df_column].notna()][df_column].apply(
+            lambda x: (np.NaN if str(x)[1:-1] == '' else str(x)[1:-1]) if (
+                    str(x)[0] == '[' and str(x)[-1] == ']') else str(x)).append(
+            df_pars[df_pars[df_column].isna()][df_column])
+        # df_column = 'salary'
+        if df_pars[df_pars[df_column].notna()].empty:
+            # print('Колонка пустая. Удаляем колонку DF: ' + df_column)
+            df_pars.drop(df_column, axis=1)
+            continue
+        try:
+            df_pars[df_pars[df_column].notna()][df_column].apply(lambda x: ast.literal_eval(x).keys())
+        except ValueError:
+            # print('        ' + df_column + ': ValueError')
+            continue
+        except SyntaxError:
+            # print('        ' + df_column + ': SyntaxError')
+            continue
+        except AttributeError:
+            # print('        ' + df_column + ': AttributeError')
+            continue
+        max_count_keys = max(df_pars[~df_pars[df_column].isna()][df_column].apply(lambda x: (len(ast.literal_eval(x).
+                                                                                                 keys()))).to_list())
+        # print('Ключей в словаре: ' + str(max_count_keys))
+        ls_keys = (df_pars[~df_pars[df_column].isna()][df_pars
+                                                   [~df_pars[df_column].isna()][df_column].apply(
+            lambda x: (len(ast.literal_eval(x).keys()))) == max_count_keys].head(1).index.to_list()[0])
+        if max_count_keys > 1:
+            list_keys = (df_pars[df_column].loc[[ls_keys]].apply(lambda x: list(ast.literal_eval(x).keys()))).to_list()[0]
+            # print('Список ключей: ' + str(list_keys))
+            for key in list_keys:
+                # print('Создаем дочернюю колонку [' + df_column + '_' + key + '] и помещаем в нее значение из ключа ['
+                #       + key + ']')
+                df_pars[df_column + '_' + key] = df_pars[~df_pars[df_column].isna()][df_column].apply(
+                    lambda x: ast.literal_eval(x).get(key)).append(df_pars[df_pars[df_column].isna()][df_column])
+    return df_pars
