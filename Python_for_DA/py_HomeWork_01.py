@@ -22,14 +22,15 @@ count_vac_fresh_older_halfyear = 0
 for i in range(len(vacs)):
     # Сколько вакансий с позициями на которых вы работаете?
     vacs_str_title = str(vacs[i]['vactitle'])
-    if (('qa' in vacs_str_title.lower()) or ('тестировщ' in vacs_str_title.lower()) or ('q&a' in vacs_str_title.lower())) \
-            and ('auto' not in vacs_str_title.lower() and 'атф' not in vacs_str_title.lower() and
-                 'авто' not in vacs_str_title.lower() and 'нагруз' not in vacs_str_title.lower()
-                 and 'НТ' not in vacs_str_title):
+    if (('qa' in vacs_str_title.lower()) or ('тестировщ' in vacs_str_title.lower()) or \
+        ('q&a' in vacs_str_title.lower())) and \
+            ('auto' not in vacs_str_title.lower() and 'атф' not in vacs_str_title.lower() and \
+             'авто' not in vacs_str_title.lower() and 'нагруз' not in vacs_str_title.lower() and \
+             'НТ' not in vacs_str_title):
         count_work_vac += 1
     # Сколько вакансий для аналатика данных?
     if ('data analyst' in vacs_str_title.lower()) or ('DA' in vacs_str_title) or ('аналитик данных' in
-        vacs_str_title.lower()):
+                                                                                  vacs_str_title.lower()):
         count_da_vac += 1
         # Сколько вакансий для аналитика данных с использованием Python?
         if ('python' in (vacs[i]['vacdescription']).lower()) or ('питон' in (vacs[i]['vacdescription']).lower()):
@@ -43,9 +44,9 @@ for i in range(len(vacs)):
                 # Насколько свежие эти вакансии?
                 if delta_days <= 30:
                     count_vac_fresh_month += 1
-                elif delta_days > 30 and delta_days <= 30*3:
+                elif 30 < delta_days <= 30 * 3:
                     count_vac_fresh_kvartal += 1
-                elif delta_days > 30*3 and delta_days < 30*6:
+                elif 30 * 3 < delta_days < 30 * 6:
                     count_vac_fresh_halfyear += 1
                 else:
                     count_vac_fresh_older_halfyear += 1
@@ -58,6 +59,3 @@ print('\t вакансий старше полугода - ' + str(count_vac_fre
 print('Сколько вакансий с позициями на которых вы работаете? - ' + str(count_work_vac))
 print('Сколько вакансий для аналатика данных? - ' + str(count_da_vac))
 print('Сколько вакансий для аналитика данных с использованием Python? - ' + str(count_da_vac_py))
-
-
-

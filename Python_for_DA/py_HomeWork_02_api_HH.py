@@ -1,32 +1,28 @@
 import pandas as pd
-import rq_hh_api
+from Python_for_DA import rq_hh_api
 import os.path
 import csv
-import re
-import datetime
 
 csv.field_size_limit(100000000)
 
 # + Задание вытащить все вакансии СБЕРа с ХХ (у апи есть ограничение в 2000, подумайте как его обойти)
 # + Вытащите все описания этих вакансий
 # + Создайте аналогичный vacancy DataFrame только добавьте поле skills
-if os.path.isfile('data\\vacancies.csv'):
+if os.path.isfile('../data/vacancies.csv'):
     print('Выгруженный файл вакансий существует.', end=' ')
-    if os.path.getsize('data\\vacancies.csv') == 0:
+    if os.path.getsize('../data/vacancies.csv') == 0:
         print('Файл оказался пустой. Выгружаем данные с HH.ru')
         vacancies = rq_hh_api.append_df_hh_download()
         vacancies.to_csv('data\\vacancies.csv')
     else:
         print('Загрузили данные в DF.')
-        vacancies = pd.read_csv('data\\vacancies.csv')
+        vacancies = pd.read_csv('../data/vacancies.csv')
         vacancies = vacancies.set_index('id')
 
 else:
     print('Выгруженный файл Отсутствует. Выгружаем данные с HH.ru.')
     vacancies = rq_hh_api.append_df_hh_download()
     vacancies.to_csv('data\\vacancies.csv')
-
-# rq_hh_api.api_hh_vacancy_rq(vacancies)
 
 # + Переведите даты публикаций в datetime
 vacancies.published_at = pd.to_datetime(vacancies.published_at)
@@ -49,7 +45,8 @@ print('Строим график количества публикаций ва�
 rq_hh_api.hh_plot_date_count(df=df_for_plt, rot=90)
 
 # - Найдите те вакансии с использованием python, которые вам интересны
-like_vac = vacancies[['area_name','name', 'description', 'skills', 'address_metro_station_name', 'published_at', 'archived', 'salary_from', 'salary_to']].copy()
+like_vac = vacancies[['area_name', 'name', 'description', 'skills', 'address_metro_station_name', 'published_at',
+                      'archived', 'salary_from', 'salary_to']].copy()
 like_vac = like_vac[like_vac['area_name'].str.lower() == 'москва']
 like_vac = like_vac[like_vac['description'].str.contains('DA|data analytic|Data analytic|Data Analytic')]
 like_vac = like_vac[like_vac['description'].str.lower().str.contains('python')]
@@ -62,6 +59,6 @@ rq_hh_api.best_skill(like_vac)
 
 # - Постройте график наиболее востребованных вакансий
 df_vostr = pd.DataFrame((vacancies.groupby('name').name.count().sort_values(ascending=False))).rename(
-    columns={'name':'count'}).reset_index()
-df_vostr = df_vostr.rename(columns={'name':'x', 'count':'y'}).head(20)
+    columns={'name': 'count'}).reset_index()
+df_vostr = df_vostr.rename(columns={'name': 'x', 'count': 'y'}).head(20)
 rq_hh_api.hh_plot_date_count(df=df_vostr, plt_type='bar', rot=90)
