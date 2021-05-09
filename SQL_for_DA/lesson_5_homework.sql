@@ -14,6 +14,16 @@ FROM
 	product p 
 	JOIN laptop l ON l.model = p.model
 
+--task1 (lesson5) с уточнением
+	
+SELECT 
+	app.maker
+	, round((ROW_NUMBER() over(ORDER BY maker) + 1)/2) AS page 
+	, count(*) OVER()/2 pages
+FROM 
+	all_products_price app 
+
+	
 --task2 (lesson5)
 -- Компьютерная фирма: Сделать view (distribution_by_type), в рамках которого будет процентное соотношение всех товаров по типу устройства. Вывод: производитель,
 CREATE OR REPLACE VIEW distribution_by_type AS 
