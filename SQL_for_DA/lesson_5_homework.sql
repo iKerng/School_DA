@@ -18,8 +18,8 @@ FROM
 	
 SELECT 
 	app.maker
-	, round((ROW_NUMBER() over(ORDER BY maker) + 1)/2) AS page 
-	, count(*) OVER()/2 pages
+	, REPLACE('list'||to_char(round((ROW_NUMBER() over(ORDER BY maker) + 1)/2), '999'),' ', '') AS page 
+	, count(*) OVER()/2 AS count_pages
 FROM 
 	all_products_price app 
 
