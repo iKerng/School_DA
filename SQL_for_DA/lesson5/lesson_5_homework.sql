@@ -18,6 +18,7 @@ FROM
 	
 SELECT 
 	app.maker
+	, model 
 	, REPLACE('list'||to_char(round((ROW_NUMBER() over(ORDER BY maker) + 1)/2), '999'),' ', '') AS page 
 	, count(*) OVER()/2 AS count_pages
 FROM 
