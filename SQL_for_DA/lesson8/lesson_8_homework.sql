@@ -118,6 +118,12 @@ group BY
 
 --task12  (lesson8)
 -- https://sql-academy.org/ru/trainer/tasks/55
+DELETE FROM company WHERE id IN (SELECT DISTINCT t.company FROM Trip t GROUP BY t.company HAVING COUNT(*) = (SELECT COUNT(*) FROM trip GROUP BY Company ORDER BY count(*) LIMIT 1))
+;
+
+
+-- универсальный запрос, так как легко вытащить любой тип ID, если бы был
+-- реализованы связки через PersonalKey и ForeignKey
 delete from Company where id in 
 	(
 		select 
