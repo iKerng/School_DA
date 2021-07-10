@@ -33,9 +33,8 @@ if st.button('Создать модель'):
     pred = model.predict(X_test)
     st.text(str(np.sqrt(mean_squared_error(y_test,pred))))
     # st.write(pd.DataFrame(pred))
+    # 2. Отобразить результат предсказания - pd. DataFrame(y_test, pred)
     if st.checkbox('Отобразить результат предсказания', value=False):
-        pred
-        y_test
+        st.write(pd.DataFrame({'real':y_test, 'predict':pred}))
+    # st.w
 
-    #     st.write(pd.DataFrame(y_test, pred))
-# 2. Отобразить результат предсказания - pd. DataFrame(y_test, pred)
